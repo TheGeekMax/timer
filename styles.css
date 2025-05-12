@@ -73,6 +73,30 @@ body {
     font-size: 16px;
 }
 
+.radio-group {
+    margin: 20px 0;
+    text-align: left;
+}
+
+.radio-group p {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.radio-option {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.radio-option input[type="radio"] {
+    margin-right: 10px;
+}
+
+.radio-option label {
+    cursor: pointer;
+}
+
 .content-container {
     flex: 1;
     display: flex;
@@ -123,4 +147,36 @@ button:hover {
     font-size: 1.2rem;
     margin-top: 15px;
     color: #666;
+}
+
+/* Styles for sleep mode */
+.sleep-mode .timer-display {
+    gap: 0;
+    align-items: center;
+    justify-content: center;
+}
+
+.sleep-mode .time-unit:nth-child(1) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sleep-mode .time-unit:nth-child(1) p {
+    font-size: 6rem;
+    margin: 0 15px 0 0;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.sleep-mode .time-unit:nth-child(1) span {
+    font-size: 2.2rem;
+    display: inline-block;
+    vertical-align: middle;
+    color: #333;
+}
+
+/* Hide all units except the first one (sleep count) in sleep mode */
+.sleep-mode .time-unit:not(:nth-child(1)) {
+    display: none;
 }

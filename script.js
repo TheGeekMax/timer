@@ -26,28 +26,63 @@ function calculateTimeDifference(targetTimestamp) {
 }
 
 // Update the timer display
-function updateTimer(timeDifference) {
+function updateTimer(timeDifference, timerType = 'n') {
     const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
     const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
     
-    document.getElementById('timer-d').textContent = formatTimeUnit(days);
-    document.getElementById('timer-h').textContent = formatTimeUnit(hours);
-    document.getElementById('timer-m').textContent = formatTimeUnit(minutes);
-    
-    // Add seconds display if needed
-    if (document.getElementById('timer-s')) {
+    if (timerType === 's') {
+        // Sleep needed mode - calculate number of sleeps (nights)
+        const targetDate = new Date(Date.now() + timeDifference);
+        const today = new Date();
+        
+        // Calculate sleeps by determining how many nights pass between now and the target
+        let sleeps;
+        
+        if (targetDate.getDate() === today.getDate() && 
+            targetDate.getMonth() === today.getMonth() && 
+            targetDate.getFullYear() === today.getFullYear()) {
+            sleeps = 0; // Same day, no sleeps
+        } else {
+            // Get today's end date (23:59:59.999)
+            const todayEnd = new Date(today);
+            todayEnd.setHours(23, 59, 59, 999);
+            
+            // Calculate days excluding today
+            sleeps = Math.ceil((targetDate - todayEnd) / (1000 * 60 * 60 * 24));
+        }
+        
+        // Only show sleep count, hide hours, minutes, seconds
+        document.getElementById('timer-d').textContent = formatTimeUnit(sleeps);
+          // Add sleep count class if not already set
+        if (!document.getElementById('timer-div').classList.contains('sleep-mode')) {
+            document.getElementById('timer-div').classList.add('sleep-mode');
+            document.querySelector('.time-unit:nth-child(1) span').textContent = 'sleeps left';
+        }
+    } else {
+        // Normal countdown mode - show all units
+        document.getElementById('timer-d').textContent = formatTimeUnit(days);
+        document.getElementById('timer-h').textContent = formatTimeUnit(hours);
+        document.getElementById('timer-m').textContent = formatTimeUnit(minutes);
         document.getElementById('timer-s').textContent = formatTimeUnit(seconds);
+        
+        // Remove sleep count class if set
+        if (document.getElementById('timer-div').classList.contains('sleep-mode')) {
+            document.getElementById('timer-div').classList.remove('sleep-mode');
+            document.querySelector('.time-unit:nth-child(1) span').textContent = 'Days';
+        }
     }
+      // No need to update other fields in sleep mode
+    // They're handled in the conditional blocks above
     
     return timeDifference <= 0;
 }
 
 // Start the countdown
-function startCountdown(targetTimestamp) {
+function startCountdown(targetTimestamp, timerType = 'n') {
     const timeDifference = calculateTimeDifference(targetTimestamp);
-    const isFinished = updateTimer(timeDifference);
+    const isFinished = updateTimer(timeDifference, timerType);
     
     // Display the target date and time (only once)
     if (!document.getElementById('target-datetime')) {
@@ -61,16 +96,19 @@ function startCountdown(targetTimestamp) {
         const targetInfo = document.createElement('p');
         targetInfo.id = 'target-datetime';
         targetInfo.textContent = `Target: ${dateString} at ${timeString}`;
-        targetInfo.style.fontSize = '1.2rem';
-        targetInfo.style.marginTop = '15px';
-        targetInfo.style.color = '#666';
         
         document.querySelector('#timer-div .timer-display').after(targetInfo);
+    }
+      // Update title based on timer type
+    if (timerType === 's') {
+        document.querySelector('#timer-div h1').textContent = 'Sleep Counter';
+    } else {
+        document.querySelector('#timer-div h1').textContent = 'Timer';
     }
     
     if (!isFinished) {
         setTimeout(() => {
-            startCountdown(targetTimestamp);
+            startCountdown(targetTimestamp, timerType);
         }, 1000);
     } else {
         // Timer finished
@@ -110,6 +148,17 @@ function initTimestampGenerator() {
             <label for="target-time">Target Time:</label>
             <input type="time" id="target-time" value="${defaultTime}">
         </div>
+        <div class="radio-group">
+            <p>Timer Display Mode:</p>
+            <div class="radio-option">
+                <input type="radio" id="timer-type-normal" name="timer-type" value="n" checked>
+                <label for="timer-type-normal">Normal Countdown</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="timer-type-sleep" name="timer-type" value="s">
+                <label for="timer-type-sleep">Sleep Count</label>
+            </div>
+        </div>
         <button id="generate-btn">Generate Timer</button>
     `;
     
@@ -117,6 +166,7 @@ function initTimestampGenerator() {
     document.getElementById('generate-btn').addEventListener('click', () => {
         const targetDate = document.getElementById('target-date').value;
         const targetTime = document.getElementById('target-time').value;
+        const timerType = document.querySelector('input[name="timer-type"]:checked').value;
         
         if (!targetDate || !targetTime) {
             alert('Please set both date and time.');
@@ -133,7 +183,7 @@ function initTimestampGenerator() {
         }
         
         const timestamp = generateTimestampFromDateTime(dateTimeString);
-        window.location.href = window.location.pathname + '?ts=' + timestamp;
+        window.location.href = window.location.pathname + `?ts=${timestamp}&type=${timerType}`;
     });
 }
 
@@ -155,8 +205,11 @@ function init() {
         timerDiv.style.display = 'block';
         timestampGen.style.display = 'none';
         
-        // Start the countdown with the provided timestamp
-        startCountdown(params.ts);
+        // Get the timer type (default to normal if not specified or invalid)
+        const timerType = params.type === 's' ? 's' : 'n';
+        
+        // Start the countdown with the provided timestamp and type
+        startCountdown(params.ts, timerType);
     } else {
         // Hide the timer and show the generator
         timerDiv.style.display = 'none';
