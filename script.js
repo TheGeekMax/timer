@@ -34,6 +34,78 @@ function decodeTimerName(encodedName) {
     }
 }
 
+// Update meta tags for social media sharing
+function updateMetaTags(timerName, targetTimestamp, timeDifference, timerType) {
+    // Format the remaining time for display
+    const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
+    
+    // Format the target date
+    const targetDate = new Date(parseInt(targetTimestamp) * 1000);
+    const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+    const timeOptions = { hour: '2-digit', minute: '2-digit' };
+    const dateString = targetDate.toLocaleDateString(undefined, dateOptions);
+    const timeString = targetDate.toLocaleTimeString(undefined, timeOptions);
+    
+    // Create time remaining text based on timer type
+    let timeRemainingText;
+    if (timerType === 's') {
+        const sleeps = calculateSleeps(targetDate);
+        timeRemainingText = `${sleeps} sleeps remaining`;
+    } else {
+        timeRemainingText = `${formatTimeUnit(days)}d ${formatTimeUnit(hours)}h ${formatTimeUnit(minutes)}m remaining`;
+    }
+    
+    // Create description text
+    const description = `${timerName} ends on ${dateString} at ${timeString}. ${timeRemainingText}`;
+    
+    // Create or update meta tags
+    updateOrCreateMetaTag('og:title', timerName);
+    updateOrCreateMetaTag('og:description', description);
+    updateOrCreateMetaTag('twitter:title', timerName);
+    updateOrCreateMetaTag('twitter:description', description);
+    updateOrCreateMetaTag('description', description);
+    
+    // Update page title
+    document.title = `${timerName} - ${timeRemainingText}`;
+}
+
+// Calculate number of sleeps between now and the target date
+function calculateSleeps(targetDate) {
+    const today = new Date();
+    
+    if (targetDate.getDate() === today.getDate() && 
+        targetDate.getMonth() === today.getMonth() && 
+        targetDate.getFullYear() === today.getFullYear()) {
+        return 0; // Same day, no sleeps
+    } else {
+        // Get today's end date (23:59:59.999)
+        const todayEnd = new Date(today);
+        todayEnd.setHours(23, 59, 59, 999);
+        
+        // Calculate days excluding today
+        return Math.ceil((targetDate - todayEnd) / (1000 * 60 * 60 * 24));
+    }
+}
+
+// Helper function to update or create meta tags
+function updateOrCreateMetaTag(name, content) {
+    let metaTag = document.querySelector(`meta[name="${name}"], meta[property="${name}"]`);
+    
+    if (!metaTag) {
+        metaTag = document.createElement('meta');
+        if (name.startsWith('og:') || name.startsWith('twitter:')) {
+            metaTag.setAttribute('property', name);
+        } else {
+            metaTag.setAttribute('name', name);
+        }
+        document.head.appendChild(metaTag);
+    }
+    
+    metaTag.setAttribute('content', content);
+}
+
 // Calculate the time difference between now and the target timestamp
 function calculateTimeDifference(targetTimestamp) {
     const now = new Date().getTime();
@@ -102,6 +174,9 @@ function startCountdown(targetTimestamp, timerType = 'n', params = {}) {
     const timeDifference = calculateTimeDifference(targetTimestamp);
     const isFinished = updateTimer(timeDifference, timerType);
     
+    // Get timer name from params
+    const timerName = params.n ? decodeTimerName(params.n) : 'Timer';
+    
     // Display the target date and time (only once)
     if (!document.getElementById('target-datetime')) {
         const targetDate = new Date(parseInt(targetTimestamp) * 1000);
@@ -118,12 +193,14 @@ function startCountdown(targetTimestamp, timerType = 'n', params = {}) {
         document.querySelector('#timer-div .timer-display').after(targetInfo);
     }
       // Update title based on timer type and name
-    const timerName = params.n ? decodeTimerName(params.n) : 'Timer';
     if (timerType === 's') {
         document.querySelector('#timer-div h1').textContent = timerName + ' - Sleep Counter';
     } else {
         document.querySelector('#timer-div h1').textContent = timerName;
     }
+    
+    // Update meta tags for social media sharing (do this on every countdown tick)
+    updateMetaTags(timerName, targetTimestamp, timeDifference, timerType);
     
     if (!isFinished) {
         setTimeout(() => {
