@@ -50,7 +50,11 @@ function updateMetaTags(timerName, targetTimestamp, timeDifference, timerType) {
     
     // Create time remaining text based on timer type
     let timeRemainingText;
-    if (timerType === 's') {
+    if (timerType === 'd') {
+        // Uranium disintegration mode
+        const disintegrations = Math.floor(timeDifference * 12434);
+        timeRemainingText = `${disintegrations.toLocaleString()} uranium particles will disintegrate`;
+    } else if (timerType === 's') {
         const sleeps = calculateSleeps(targetDate);
         timeRemainingText = `${sleeps} sleeps remaining`;
     } else {
@@ -122,7 +126,30 @@ function updateTimer(timeDifference, timerType = 'n') {
     const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
     
-    if (timerType === 's') {
+    if (timerType === 'd') {
+        // Uranium disintegration mode
+        // 12,434 particles per millisecond
+        // Add some randomness to make the counter appear more natural
+        const baseDisintegrations = Math.floor(timeDifference * 12434);
+        const randomVariance = Math.floor(Math.random() * 1000 - 500); // Random variance between -500 and +500
+        const disintegrations = Math.max(0, baseDisintegrations + randomVariance);
+        
+        // Format with commas for readability
+        const formattedCount = disintegrations.toLocaleString();
+        
+        // Only show disintegration count
+        document.getElementById('timer-d').textContent = formattedCount;
+        
+        // Add disintegration mode class
+        if (!document.getElementById('timer-div').classList.contains('disintegration-mode')) {
+            // Remove sleep mode class if present
+            if (document.getElementById('timer-div').classList.contains('sleep-mode')) {
+                document.getElementById('timer-div').classList.remove('sleep-mode');
+            }
+            document.getElementById('timer-div').classList.add('disintegration-mode');
+            document.querySelector('.time-unit:nth-child(1) span').textContent = 'particles';
+        }
+    } else if (timerType === 's') {
         // Sleep needed mode - calculate number of sleeps (nights)
         const targetDate = new Date(Date.now() + timeDifference);
         const today = new Date();
@@ -145,8 +172,13 @@ function updateTimer(timeDifference, timerType = 'n') {
         
         // Only show sleep count, hide hours, minutes, seconds
         document.getElementById('timer-d').textContent = formatTimeUnit(sleeps);
-          // Add sleep count class if not already set
+        
+        // Add sleep count class if not already set
         if (!document.getElementById('timer-div').classList.contains('sleep-mode')) {
+            // Remove disintegration mode class if present
+            if (document.getElementById('timer-div').classList.contains('disintegration-mode')) {
+                document.getElementById('timer-div').classList.remove('disintegration-mode');
+            }
             document.getElementById('timer-div').classList.add('sleep-mode');
             document.querySelector('.time-unit:nth-child(1) span').textContent = 'sleeps left';
         }
@@ -157,11 +189,14 @@ function updateTimer(timeDifference, timerType = 'n') {
         document.getElementById('timer-m').textContent = formatTimeUnit(minutes);
         document.getElementById('timer-s').textContent = formatTimeUnit(seconds);
         
-        // Remove sleep count class if set
+        // Remove special mode classes if set
         if (document.getElementById('timer-div').classList.contains('sleep-mode')) {
             document.getElementById('timer-div').classList.remove('sleep-mode');
-            document.querySelector('.time-unit:nth-child(1) span').textContent = 'Days';
         }
+        if (document.getElementById('timer-div').classList.contains('disintegration-mode')) {
+            document.getElementById('timer-div').classList.remove('disintegration-mode');
+        }
+        document.querySelector('.time-unit:nth-child(1) span').textContent = 'Days';
     }
       // No need to update other fields in sleep mode
     // They're handled in the conditional blocks above
@@ -195,6 +230,8 @@ function startCountdown(targetTimestamp, timerType = 'n', params = {}) {
       // Update title based on timer type and name
     if (timerType === 's') {
         document.querySelector('#timer-div h1').textContent = timerName + ' - Sleep Counter';
+    } else if (timerType === 'd') {
+        document.querySelector('#timer-div h1').textContent = timerName + ' - Uranium Disintegration';
     } else {
         document.querySelector('#timer-div h1').textContent = timerName;
     }
@@ -203,9 +240,14 @@ function startCountdown(targetTimestamp, timerType = 'n', params = {}) {
     updateMetaTags(timerName, targetTimestamp, timeDifference, timerType);
     
     if (!isFinished) {
+        // Set update interval based on timer type
+        // For uranium disintegration, update every 100ms for smoother counting
+        // For other modes, update every 1000ms (1 second)
+        const updateInterval = timerType === 'd' ? 50 : 1000;
+        
         setTimeout(() => {
             startCountdown(targetTimestamp, timerType, params);
-        }, 1000);
+        }, updateInterval);
     } else {
         // Timer finished
         const timerName = params.n ? decodeTimerName(params.n) : 'Timer';
@@ -259,6 +301,10 @@ function initTimestampGenerator() {
                 <input type="radio" id="timer-type-sleep" name="timer-type" value="s">
                 <label for="timer-type-sleep">Sleep Count</label>
             </div>
+            <div class="radio-option">
+                <input type="radio" id="timer-type-uranium" name="timer-type" value="d">
+                <label for="timer-type-uranium">Uranium Disintegration</label>
+            </div>
         </div>
         <button id="generate-btn">Generate Timer</button>
     `;
@@ -310,7 +356,12 @@ function init() {
         timestampGen.style.display = 'none';
         
         // Get the timer type (default to normal if not specified or invalid)
-        const timerType = params.type === 's' ? 's' : 'n';
+        let timerType = 'n';
+        if (params.type === 's') {
+            timerType = 's';
+        } else if (params.type === 'd') {
+            timerType = 'd';
+        }
         
         // Start the countdown with the provided timestamp, type, and params
         startCountdown(params.ts, timerType, params);
