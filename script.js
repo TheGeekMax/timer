@@ -16,6 +16,24 @@ function formatTimeUnit(unit) {
     return unit.toString().padStart(2, '0');
 }
 
+// Encode timer name to make URL shorter
+function encodeTimerName(name) {
+    // Use base64 encoding and remove padding = signs to make it shorter
+    return btoa(encodeURIComponent(name)).replace(/=/g, '');
+}
+
+// Decode timer name from URL
+function decodeTimerName(encodedName) {
+    try {
+        // Add padding if needed and decode
+        const paddedName = encodedName + '==='.slice(0, (4 - encodedName.length % 4) % 4);
+        return decodeURIComponent(atob(paddedName));
+    } catch (e) {
+        console.error("Failed to decode timer name:", e);
+        return "Timer"; // Default name on decode error
+    }
+}
+
 // Calculate the time difference between now and the target timestamp
 function calculateTimeDifference(targetTimestamp) {
     const now = new Date().getTime();
@@ -80,7 +98,7 @@ function updateTimer(timeDifference, timerType = 'n') {
 }
 
 // Start the countdown
-function startCountdown(targetTimestamp, timerType = 'n') {
+function startCountdown(targetTimestamp, timerType = 'n', params = {}) {
     const timeDifference = calculateTimeDifference(targetTimestamp);
     const isFinished = updateTimer(timeDifference, timerType);
     
@@ -99,20 +117,22 @@ function startCountdown(targetTimestamp, timerType = 'n') {
         
         document.querySelector('#timer-div .timer-display').after(targetInfo);
     }
-      // Update title based on timer type
+      // Update title based on timer type and name
+    const timerName = params.n ? decodeTimerName(params.n) : 'Timer';
     if (timerType === 's') {
-        document.querySelector('#timer-div h1').textContent = 'Sleep Counter';
+        document.querySelector('#timer-div h1').textContent = timerName + ' - Sleep Counter';
     } else {
-        document.querySelector('#timer-div h1').textContent = 'Timer';
+        document.querySelector('#timer-div h1').textContent = timerName;
     }
     
     if (!isFinished) {
         setTimeout(() => {
-            startCountdown(targetTimestamp, timerType);
+            startCountdown(targetTimestamp, timerType, params);
         }, 1000);
     } else {
         // Timer finished
-        document.getElementById('timer-div').innerHTML = '<h1>Time\'s up!</h1>';
+        const timerName = params.n ? decodeTimerName(params.n) : 'Timer';
+        document.getElementById('timer-div').innerHTML = `<h1>${timerName} - Time's up!</h1>`;
     }
 }
 
@@ -141,6 +161,10 @@ function initTimestampGenerator() {
     timestampGen.innerHTML = `
         <h2>Generate a Countdown Timer</h2>
         <div class="input-group">
+            <label for="timer-name">Timer Name:</label>
+            <input type="text" id="timer-name" placeholder="Timer" value="Timer">
+        </div>
+        <div class="input-group">
             <label for="target-date">Target Date:</label>
             <input type="date" id="target-date" value="${defaultDate}" min="${now.toISOString().split('T')[0]}">
         </div>
@@ -164,6 +188,7 @@ function initTimestampGenerator() {
     
     // Add event listener to the generate button
     document.getElementById('generate-btn').addEventListener('click', () => {
+        const timerName = document.getElementById('timer-name').value.trim() || 'Timer';
         const targetDate = document.getElementById('target-date').value;
         const targetTime = document.getElementById('target-time').value;
         const timerType = document.querySelector('input[name="timer-type"]:checked').value;
@@ -183,7 +208,9 @@ function initTimestampGenerator() {
         }
         
         const timestamp = generateTimestampFromDateTime(dateTimeString);
-        window.location.href = window.location.pathname + `?ts=${timestamp}&type=${timerType}`;
+        // Only encode and add name parameter if it's not the default "Timer"
+        const nameParam = timerName !== 'Timer' ? `&n=${encodeTimerName(timerName)}` : '';
+        window.location.href = window.location.pathname + `?ts=${timestamp}&type=${timerType}${nameParam}`;
     });
 }
 
@@ -208,8 +235,8 @@ function init() {
         // Get the timer type (default to normal if not specified or invalid)
         const timerType = params.type === 's' ? 's' : 'n';
         
-        // Start the countdown with the provided timestamp and type
-        startCountdown(params.ts, timerType);
+        // Start the countdown with the provided timestamp, type, and params
+        startCountdown(params.ts, timerType, params);
     } else {
         // Hide the timer and show the generator
         timerDiv.style.display = 'none';
