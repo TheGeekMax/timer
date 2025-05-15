@@ -30,7 +30,7 @@ function decodeTimerName(encodedName) {
         return decodeURIComponent(atob(paddedName));
     } catch (e) {
         console.error("Failed to decode timer name:", e);
-        return "Timer"; // Default name on decode error
+        return "Minuteur"; // Default name on decode error
     }
 }
 
@@ -47,22 +47,20 @@ function updateMetaTags(timerName, targetTimestamp, timeDifference, timerType) {
     const timeOptions = { hour: '2-digit', minute: '2-digit' };
     const dateString = targetDate.toLocaleDateString(undefined, dateOptions);
     const timeString = targetDate.toLocaleTimeString(undefined, timeOptions);
-    
-    // Create time remaining text based on timer type
+      // Create time remaining text based on timer type
     let timeRemainingText;
     if (timerType === 'd') {
         // Uranium disintegration mode
         const disintegrations = Math.floor(timeDifference * 12434);
-        timeRemainingText = `${disintegrations.toLocaleString()} uranium particles will disintegrate`;
+        timeRemainingText = `${disintegrations.toLocaleString()} particules d'uranium se désintégreront`;
     } else if (timerType === 's') {
         const sleeps = calculateSleeps(targetDate);
-        timeRemainingText = `${sleeps} sleeps remaining`;
+        timeRemainingText = `${sleeps} nuits restantes`;
     } else {
-        timeRemainingText = `${formatTimeUnit(days)}d ${formatTimeUnit(hours)}h ${formatTimeUnit(minutes)}m remaining`;
+        timeRemainingText = `${formatTimeUnit(days)}j ${formatTimeUnit(hours)}h ${formatTimeUnit(minutes)}m restantes`;
     }
-    
-    // Create description text
-    const description = `${timerName} ends on ${dateString} at ${timeString}. ${timeRemainingText}`;
+      // Create description text
+    const description = `${timerName} se termine le ${dateString} à ${timeString}. ${timeRemainingText}`;
     
     // Create or update meta tags
     updateOrCreateMetaTag('og:title', timerName);
@@ -147,7 +145,7 @@ function updateTimer(timeDifference, timerType = 'n') {
                 document.getElementById('timer-div').classList.remove('sleep-mode');
             }
             document.getElementById('timer-div').classList.add('disintegration-mode');
-            document.querySelector('.time-unit:nth-child(1) span').textContent = 'particles';
+            document.querySelector('.time-unit:nth-child(1) span').textContent = 'particules';
         }
     } else if (timerType === 's') {
         // Sleep needed mode - calculate number of sleeps (nights)
@@ -180,7 +178,7 @@ function updateTimer(timeDifference, timerType = 'n') {
                 document.getElementById('timer-div').classList.remove('disintegration-mode');
             }
             document.getElementById('timer-div').classList.add('sleep-mode');
-            document.querySelector('.time-unit:nth-child(1) span').textContent = 'sleeps left';
+            document.querySelector('.time-unit:nth-child(1) span').textContent = 'nuits restantes';
         }
     } else {
         // Normal countdown mode - show all units
@@ -196,9 +194,10 @@ function updateTimer(timeDifference, timerType = 'n') {
         if (document.getElementById('timer-div').classList.contains('disintegration-mode')) {
             document.getElementById('timer-div').classList.remove('disintegration-mode');
         }
-        document.querySelector('.time-unit:nth-child(1) span').textContent = 'Days';
+        document.querySelector('.time-unit:nth-child(1) span').textContent = 'Jours';
     }
-      // No need to update other fields in sleep mode
+    
+    // No need to update other fields in sleep mode
     // They're handled in the conditional blocks above
     
     return timeDifference <= 0;
@@ -221,17 +220,16 @@ function startCountdown(targetTimestamp, timerType = 'n', params = {}) {
         const dateString = targetDate.toLocaleDateString(undefined, dateOptions);
         const timeString = targetDate.toLocaleTimeString(undefined, timeOptions);
         
-        const targetInfo = document.createElement('p');
+    const targetInfo = document.createElement('p');
         targetInfo.id = 'target-datetime';
-        targetInfo.textContent = `Target: ${dateString} at ${timeString}`;
+        targetInfo.textContent = `Cible : ${dateString} à ${timeString}`;
         
         document.querySelector('#timer-div .timer-display').after(targetInfo);
-    }
-      // Update title based on timer type and name
+    }    // Update title based on timer type and name
     if (timerType === 's') {
-        document.querySelector('#timer-div h1').textContent = timerName + ' - Sleep Counter';
+        document.querySelector('#timer-div h1').textContent = timerName + ' - Compteur de Nuits';
     } else if (timerType === 'd') {
-        document.querySelector('#timer-div h1').textContent = timerName + ' - Uranium Disintegration';
+        document.querySelector('#timer-div h1').textContent = timerName + ' - Désintégration d\'Uranium';
     } else {
         document.querySelector('#timer-div h1').textContent = timerName;
     }
@@ -248,10 +246,9 @@ function startCountdown(targetTimestamp, timerType = 'n', params = {}) {
         setTimeout(() => {
             startCountdown(targetTimestamp, timerType, params);
         }, updateInterval);
-    } else {
-        // Timer finished
-        const timerName = params.n ? decodeTimerName(params.n) : 'Timer';
-        document.getElementById('timer-div').innerHTML = `<h1>${timerName} - Time's up!</h1>`;
+    } else {        // Timer finished
+        const timerName = params.n ? decodeTimerName(params.n) : 'Minuteur';
+        document.getElementById('timer-div').innerHTML = `<h1>${timerName} - Temps écoulé !</h1>`;
     }
 }
 
@@ -275,38 +272,37 @@ function initTimestampGenerator() {
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
     const defaultTime = `${hours}:${minutes}`;
-    
-    // Create the generator UI
+      // Create the generator UI
     timestampGen.innerHTML = `
-        <h2>Generate a Countdown Timer</h2>
+        <h2>Créer un compte à rebours</h2>
         <div class="input-group">
-            <label for="timer-name">Timer Name:</label>
-            <input type="text" id="timer-name" placeholder="Timer" value="Timer">
+            <label for="timer-name">Nom du minuteur :</label>
+            <input type="text" id="timer-name" placeholder="Minuteur" value="Minuteur">
         </div>
         <div class="input-group">
-            <label for="target-date">Target Date:</label>
+            <label for="target-date">Date cible :</label>
             <input type="date" id="target-date" value="${defaultDate}" min="${now.toISOString().split('T')[0]}">
         </div>
         <div class="input-group">
-            <label for="target-time">Target Time:</label>
+            <label for="target-time">Heure cible :</label>
             <input type="time" id="target-time" value="${defaultTime}">
         </div>
         <div class="radio-group">
-            <p>Timer Display Mode:</p>
+            <p>Mode d'affichage :</p>
             <div class="radio-option">
                 <input type="radio" id="timer-type-normal" name="timer-type" value="n" checked>
-                <label for="timer-type-normal">Normal Countdown</label>
+                <label for="timer-type-normal">Compte à rebours normal</label>
             </div>
             <div class="radio-option">
                 <input type="radio" id="timer-type-sleep" name="timer-type" value="s">
-                <label for="timer-type-sleep">Sleep Count</label>
+                <label for="timer-type-sleep">Compteur de nuits</label>
             </div>
             <div class="radio-option">
                 <input type="radio" id="timer-type-uranium" name="timer-type" value="d">
-                <label for="timer-type-uranium">Uranium Disintegration</label>
+                <label for="timer-type-uranium">Désintégration d'uranium</label>
             </div>
         </div>
-        <button id="generate-btn">Generate Timer</button>
+        <button id="generate-btn">Créer le minuteur</button>
     `;
     
     // Add event listener to the generate button
@@ -316,8 +312,8 @@ function initTimestampGenerator() {
         const targetTime = document.getElementById('target-time').value;
         const timerType = document.querySelector('input[name="timer-type"]:checked').value;
         
-        if (!targetDate || !targetTime) {
-            alert('Please set both date and time.');
+    if (!targetDate || !targetTime) {
+            alert('Veuillez définir la date et l\'heure.');
             return;
         }
         
@@ -326,13 +322,12 @@ function initTimestampGenerator() {
         const currentTime = new Date();
         
         if (selectedDateTime <= currentTime) {
-            alert('Please select a future date and time.');
+            alert('Veuillez sélectionner une date et une heure futures.');
             return;
         }
         
-        const timestamp = generateTimestampFromDateTime(dateTimeString);
-        // Only encode and add name parameter if it's not the default "Timer"
-        const nameParam = timerName !== 'Timer' ? `&n=${encodeTimerName(timerName)}` : '';
+        const timestamp = generateTimestampFromDateTime(dateTimeString);        // Only encode and add name parameter if it's not the default "Minuteur"
+        const nameParam = timerName !== 'Minuteur' ? `&n=${encodeTimerName(timerName)}` : '';
         window.location.href = window.location.pathname + `?ts=${timestamp}&type=${timerType}${nameParam}`;
     });
 }
