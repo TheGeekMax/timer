@@ -270,9 +270,15 @@ function startCountdown(targetTimestamp, timerType = 'n', params = {}) {
     
     if (!isFinished) {
         // Set update interval based on timer type
-        // For uranium disintegration, update every 100ms for smoother counting
+        // For birth mode, update every 1ms for real-time counting
+        // For uranium disintegration, update every 50ms for smoother counting
         // For other modes, update every 1000ms (1 second)
-        const updateInterval = timerType === 'd' ? 50 : 1000;
+        let updateInterval = 1000;
+        if (timerType === 'b') {
+            updateInterval = 1;
+        } else if (timerType === 'd') {
+            updateInterval = 50;
+        }
         
         setTimeout(() => {
             startCountdown(targetTimestamp, timerType, params);
