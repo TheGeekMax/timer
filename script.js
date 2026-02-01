@@ -56,6 +56,10 @@ function updateMetaTags(timerName, targetTimestamp, timeDifference, timerType) {
     } else if (timerType === 's') {
         const sleeps = calculateSleeps(targetDate);
         timeRemainingText = `${sleeps} nuits restantes`;
+    } else if (timerType === 'b') {
+        // Birth mode - 0.00466 births per millisecond
+        const births = Math.floor(timeDifference * 0.00466);
+        timeRemainingText = `${births.toLocaleString()} naissances restantes`;
     } else {
         timeRemainingText = `${formatTimeUnit(days)}j ${formatTimeUnit(hours)}h ${formatTimeUnit(minutes)}m restantes`;
     }
@@ -147,6 +151,28 @@ function updateTimer(timeDifference, timerType = 'n') {
             document.getElementById('timer-div').classList.add('disintegration-mode');
             document.querySelector('.time-unit:nth-child(1) span').textContent = 'particules';
         }
+    } else if (timerType === 'b') {
+        // Birth mode - 0.00466 births per millisecond
+        const births = Math.floor(timeDifference * 0.00466);
+        
+        // Format with commas for readability
+        const formattedCount = births.toLocaleString();
+        
+        // Only show birth count
+        document.getElementById('timer-d').textContent = formattedCount;
+        
+        // Add birth mode class
+        if (!document.getElementById('timer-div').classList.contains('birth-mode')) {
+            // Remove other mode classes if present
+            if (document.getElementById('timer-div').classList.contains('sleep-mode')) {
+                document.getElementById('timer-div').classList.remove('sleep-mode');
+            }
+            if (document.getElementById('timer-div').classList.contains('disintegration-mode')) {
+                document.getElementById('timer-div').classList.remove('disintegration-mode');
+            }
+            document.getElementById('timer-div').classList.add('birth-mode');
+            document.querySelector('.time-unit:nth-child(1) span').textContent = 'bébés';
+        }
     } else if (timerType === 's') {
         // Sleep needed mode - calculate number of sleeps (nights)
         const targetDate = new Date(Date.now() + timeDifference);
@@ -194,6 +220,9 @@ function updateTimer(timeDifference, timerType = 'n') {
         if (document.getElementById('timer-div').classList.contains('disintegration-mode')) {
             document.getElementById('timer-div').classList.remove('disintegration-mode');
         }
+        if (document.getElementById('timer-div').classList.contains('birth-mode')) {
+            document.getElementById('timer-div').classList.remove('birth-mode');
+        }
         document.querySelector('.time-unit:nth-child(1) span').textContent = 'Jours';
     }
     
@@ -230,6 +259,8 @@ function startCountdown(targetTimestamp, timerType = 'n', params = {}) {
         document.querySelector('#timer-div h1').textContent = timerName + ' - Compteur de Nuits';
     } else if (timerType === 'd') {
         document.querySelector('#timer-div h1').textContent = timerName + ' - Désintégration d\'Uranium';
+    } else if (timerType === 'b') {
+        document.querySelector('#timer-div h1').textContent = timerName + ' - Compteur de Naissances';
     } else {
         document.querySelector('#timer-div h1').textContent = timerName;
     }
@@ -301,6 +332,10 @@ function initTimestampGenerator() {
                 <input type="radio" id="timer-type-uranium" name="timer-type" value="d">
                 <label for="timer-type-uranium">Désintégration d'uranium</label>
             </div>
+            <div class="radio-option">
+                <input type="radio" id="timer-type-birth" name="timer-type" value="b">
+                <label for="timer-type-birth">Compteur de naissances</label>
+            </div>
         </div>
         <button id="generate-btn">Créer le minuteur</button>
     `;
@@ -356,6 +391,8 @@ function init() {
             timerType = 's';
         } else if (params.type === 'd') {
             timerType = 'd';
+        } else if (params.type === 'b') {
+            timerType = 'b';
         }
         
         // Start the countdown with the provided timestamp, type, and params
