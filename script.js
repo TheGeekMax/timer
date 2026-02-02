@@ -179,7 +179,7 @@ function updateTimer(timeDifference, timerType = 'n') {
         }
     } else if (timerType === 'r') {
         // Sun reduction mode - 0.75m/h = 0.01cm every 0.5s = 0.00002cm per millisecond
-        const cmReduction = (timeDifference * 0.00002).toFixed(2);
+        const cmReduction = (timeDifference * 0.0000002).toFixed(4);
         
         // Only show cm reduction count
         document.getElementById('timer-d').textContent = cmReduction;
@@ -202,7 +202,7 @@ function updateTimer(timeDifference, timerType = 'n') {
                 document.getElementById('timer-div').classList.remove('birth-mode');
             }
             document.getElementById('timer-div').classList.add('sun-reduction-mode');
-            document.querySelector('.time-unit:nth-child(1) span').textContent = 'centimètres';
+            document.querySelector('.time-unit:nth-child(1) span').textContent = 'mètres';
         }
     } else if (timerType === 's') {
         // Sleep needed mode - calculate number of sleeps (nights)
