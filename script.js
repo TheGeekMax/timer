@@ -60,6 +60,10 @@ function updateMetaTags(timerName, targetTimestamp, timeDifference, timerType) {
         // Birth mode - 0.00466 births per millisecond
         const births = Math.floor(timeDifference * 0.00466);
         timeRemainingText = `${births.toLocaleString()} naissances restantes`;
+    } else if (timerType === 'r') {
+        // Sun reduction mode - 0.75m/h = 0.01cm every 0.5s = 0.00002cm per millisecond
+        const cmReduction = (timeDifference * 0.00002).toFixed(2);
+        timeRemainingText = `${cmReduction} cm de réduction du soleil restants`;
     } else {
         timeRemainingText = `${formatTimeUnit(days)}j ${formatTimeUnit(hours)}h ${formatTimeUnit(minutes)}m restantes`;
     }
@@ -173,6 +177,33 @@ function updateTimer(timeDifference, timerType = 'n') {
             document.getElementById('timer-div').classList.add('birth-mode');
             document.querySelector('.time-unit:nth-child(1) span').textContent = 'bébés';
         }
+    } else if (timerType === 'r') {
+        // Sun reduction mode - 0.75m/h = 0.01cm every 0.5s = 0.00002cm per millisecond
+        const cmReduction = (timeDifference * 0.00002).toFixed(2);
+        
+        // Only show cm reduction count
+        document.getElementById('timer-d').textContent = cmReduction;
+        
+        // Hide hours, minutes, seconds
+        document.getElementById('timer-h').textContent = '';
+        document.getElementById('timer-m').textContent = '';
+        document.getElementById('timer-s').textContent = '';
+        
+        // Add sun reduction mode class
+        if (!document.getElementById('timer-div').classList.contains('sun-reduction-mode')) {
+            // Remove other mode classes if present
+            if (document.getElementById('timer-div').classList.contains('sleep-mode')) {
+                document.getElementById('timer-div').classList.remove('sleep-mode');
+            }
+            if (document.getElementById('timer-div').classList.contains('disintegration-mode')) {
+                document.getElementById('timer-div').classList.remove('disintegration-mode');
+            }
+            if (document.getElementById('timer-div').classList.contains('birth-mode')) {
+                document.getElementById('timer-div').classList.remove('birth-mode');
+            }
+            document.getElementById('timer-div').classList.add('sun-reduction-mode');
+            document.querySelector('.time-unit:nth-child(1) span').textContent = 'centimètres';
+        }
     } else if (timerType === 's') {
         // Sleep needed mode - calculate number of sleeps (nights)
         const targetDate = new Date(Date.now() + timeDifference);
@@ -223,6 +254,9 @@ function updateTimer(timeDifference, timerType = 'n') {
         if (document.getElementById('timer-div').classList.contains('birth-mode')) {
             document.getElementById('timer-div').classList.remove('birth-mode');
         }
+        if (document.getElementById('timer-div').classList.contains('sun-reduction-mode')) {
+            document.getElementById('timer-div').classList.remove('sun-reduction-mode');
+        }
         document.querySelector('.time-unit:nth-child(1) span').textContent = 'Jours';
     }
     
@@ -261,6 +295,8 @@ function startCountdown(targetTimestamp, timerType = 'n', params = {}) {
         document.querySelector('#timer-div h1').textContent = timerName + ' - Désintégration d\'Uranium';
     } else if (timerType === 'b') {
         document.querySelector('#timer-div h1').textContent = timerName + ' - Compteur de Naissances';
+    } else if (timerType === 'r') {
+        document.querySelector('#timer-div h1').textContent = timerName + ' - Réduction du Soleil';
     } else {
         document.querySelector('#timer-div h1').textContent = timerName;
     }
@@ -272,12 +308,15 @@ function startCountdown(targetTimestamp, timerType = 'n', params = {}) {
         // Set update interval based on timer type
         // For birth mode, update every 1ms for real-time counting
         // For uranium disintegration, update every 50ms for smoother counting
+        // For sun reduction, update every 500ms (half second) to show the 0.01cm increments
         // For other modes, update every 1000ms (1 second)
         let updateInterval = 1000;
         if (timerType === 'b') {
             updateInterval = 1;
         } else if (timerType === 'd') {
             updateInterval = 50;
+        } else if (timerType === 'r') {
+            updateInterval = 500;
         }
         
         setTimeout(() => {
@@ -342,6 +381,10 @@ function initTimestampGenerator() {
                 <input type="radio" id="timer-type-birth" name="timer-type" value="b">
                 <label for="timer-type-birth">Compteur de naissances</label>
             </div>
+            <div class="radio-option">
+                <input type="radio" id="timer-type-sun" name="timer-type" value="r">
+                <label for="timer-type-sun">Réduction du soleil</label>
+            </div>
         </div>
         <button id="generate-btn">Créer le minuteur</button>
     `;
@@ -399,6 +442,8 @@ function init() {
             timerType = 'd';
         } else if (params.type === 'b') {
             timerType = 'b';
+        } else if (params.type === 'r') {
+            timerType = 'r';
         }
         
         // Start the countdown with the provided timestamp, type, and params
