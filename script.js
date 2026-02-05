@@ -64,6 +64,10 @@ function updateMetaTags(timerName, targetTimestamp, timeDifference, timerType) {
         // Sun reduction mode - 0.75m/h = 0.01cm every 0.5s = 0.00002cm per millisecond
         const cmReduction = (timeDifference * 0.00002).toFixed(2);
         timeRemainingText = `${cmReduction} cm de réduction du soleil restants`;
+    } else if (timerType === 'l') {
+        // LEGO build mode - 374.62 bricks/h = 0.0104 bricks per 100ms = 0.000104 bricks per millisecond
+        const bricks = (timeDifference * 0.000104).toFixed(2);
+        timeRemainingText = `${bricks} briques LEGO restantes`;
     } else {
         timeRemainingText = `${formatTimeUnit(days)}j ${formatTimeUnit(hours)}h ${formatTimeUnit(minutes)}m restantes`;
     }
@@ -202,7 +206,37 @@ function updateTimer(timeDifference, timerType = 'n') {
                 document.getElementById('timer-div').classList.remove('birth-mode');
             }
             document.getElementById('timer-div').classList.add('sun-reduction-mode');
-            document.querySelector('.time-unit:nth-child(1) span').textContent = 'mètres';
+            document.querySelector('.time-unit:nth-child(1) span').textContent = 'centimètres';
+        }
+    } else if (timerType === 'l') {
+        // LEGO build mode - 374.62 bricks/h = 0.0104 bricks per 100ms = 0.000104 bricks per millisecond
+        const bricks = (timeDifference * 0.000104).toFixed(0);
+        
+        // Only show brick count
+        document.getElementById('timer-d').textContent = bricks;
+        
+        // Hide hours, minutes, seconds
+        document.getElementById('timer-h').textContent = '';
+        document.getElementById('timer-m').textContent = '';
+        document.getElementById('timer-s').textContent = '';
+        
+        // Add lego mode class
+        if (!document.getElementById('timer-div').classList.contains('lego-mode')) {
+            // Remove other mode classes if present
+            if (document.getElementById('timer-div').classList.contains('sleep-mode')) {
+                document.getElementById('timer-div').classList.remove('sleep-mode');
+            }
+            if (document.getElementById('timer-div').classList.contains('disintegration-mode')) {
+                document.getElementById('timer-div').classList.remove('disintegration-mode');
+            }
+            if (document.getElementById('timer-div').classList.contains('birth-mode')) {
+                document.getElementById('timer-div').classList.remove('birth-mode');
+            }
+            if (document.getElementById('timer-div').classList.contains('sun-reduction-mode')) {
+                document.getElementById('timer-div').classList.remove('sun-reduction-mode');
+            }
+            document.getElementById('timer-div').classList.add('lego-mode');
+            document.querySelector('.time-unit:nth-child(1) span').textContent = 'briques';
         }
     } else if (timerType === 's') {
         // Sleep needed mode - calculate number of sleeps (nights)
@@ -257,6 +291,9 @@ function updateTimer(timeDifference, timerType = 'n') {
         if (document.getElementById('timer-div').classList.contains('sun-reduction-mode')) {
             document.getElementById('timer-div').classList.remove('sun-reduction-mode');
         }
+        if (document.getElementById('timer-div').classList.contains('lego-mode')) {
+            document.getElementById('timer-div').classList.remove('lego-mode');
+        }
         document.querySelector('.time-unit:nth-child(1) span').textContent = 'Jours';
     }
     
@@ -297,6 +334,8 @@ function startCountdown(targetTimestamp, timerType = 'n', params = {}) {
         document.querySelector('#timer-div h1').textContent = timerName + ' - Compteur de Naissances';
     } else if (timerType === 'r') {
         document.querySelector('#timer-div h1').textContent = timerName + ' - Réduction du Soleil';
+    } else if (timerType === 'l') {
+        document.querySelector('#timer-div h1').textContent = timerName + ' - Construction LEGO';
     } else {
         document.querySelector('#timer-div h1').textContent = timerName;
     }
@@ -317,6 +356,8 @@ function startCountdown(targetTimestamp, timerType = 'n', params = {}) {
             updateInterval = 50;
         } else if (timerType === 'r') {
             updateInterval = 500;
+        } else if (timerType === 'l') {
+            updateInterval = 100;
         }
         
         setTimeout(() => {
@@ -385,6 +426,10 @@ function initTimestampGenerator() {
                 <input type="radio" id="timer-type-sun" name="timer-type" value="r">
                 <label for="timer-type-sun">Réduction du soleil</label>
             </div>
+            <div class="radio-option">
+                <input type="radio" id="timer-type-lego" name="timer-type" value="l">
+                <label for="timer-type-lego">Construction LEGO</label>
+            </div>
         </div>
         <button id="generate-btn">Créer le minuteur</button>
     `;
@@ -444,6 +489,8 @@ function init() {
             timerType = 'b';
         } else if (params.type === 'r') {
             timerType = 'r';
+        } else if (params.type === 'l') {
+            timerType = 'l';
         }
         
         // Start the countdown with the provided timestamp, type, and params
